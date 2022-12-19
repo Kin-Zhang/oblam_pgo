@@ -38,6 +38,8 @@
 #include <Eigen/Dense>
 #include <ceres/ceres.h>
 
+#include <glog/logging.h>
+
 /* All needed for pointcloud manipulation -------------*/
 #include <pcl/search/impl/kdtree.hpp>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -207,10 +209,29 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
     double cost_relpose_init = -1, cost_relpose_final = -1;
 
     /* ASSIGNMENT BLOCK START ---------------------------------------------------------------------------------------*/
-
-        // Create prior relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
-        // ...
-
+    // double *PARAM_POSE_icp_wb = new double[7];
+    // double *PARAM_POSE_est_wb = new double[7];
+    // myTf odom_i(kfPose->points[prevId]);
+    // myTf odom_j(kfPose->points[currId]);
+    // myTf tfm_W_Bcurr = odom_i * tf_Bprev_Bcurr;
+    // PARAM_POSE_icp_wb[0] = tfm_W_Bcurr.pos.x();
+    // PARAM_POSE_icp_wb[1] = tfm_W_Bcurr.pos.y();
+    // PARAM_POSE_icp_wb[2] = tfm_W_Bcurr.pos.z();
+    // PARAM_POSE_icp_wb[3] = tfm_W_Bcurr.rot.x();
+    // PARAM_POSE_icp_wb[4] = tfm_W_Bcurr.rot.y();
+    // PARAM_POSE_icp_wb[5] = tfm_W_Bcurr.rot.z();
+    // PARAM_POSE_icp_wb[6] = tfm_W_Bcurr.rot.w();
+    // PARAM_POSE_est_wb[0] = odom_j.pos.x();
+    // PARAM_POSE_est_wb[1] = odom_j.pos.y();
+    // PARAM_POSE_est_wb[2] = odom_j.pos.z();
+    // PARAM_POSE_est_wb[3] = odom_j.rot.x();
+    // PARAM_POSE_est_wb[4] = odom_j.rot.y();
+    // PARAM_POSE_est_wb[5] = odom_j.rot.z();
+    // PARAM_POSE_est_wb[6] = odom_j.rot.w();
+    // // myTf tf_Bprev_Bcurr = myTf(prevPose).inverse() * myTf(tfm_W_Bcurr);
+    // // Create prior relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
+    // RelOdomFactor *f = new RelOdomFactor(tfm_W_Bcurr.pos, odom_j.pos, tfm_W_Bcurr.rot, odom_j.rot, 10e-2, 10e-2); // what's the n?? -> noise but where to find the noise?
+    // res_ids_relpose.push_back(problem.AddResidualBlock(f, NULL, PARAM_POSE_icp_wb, PARAM_POSE_est_wb));
     /* ASSIGNMENT BLOCK END -----------------------------------------------------------------------------------------*/
 
     /* #endregion Add the {}^k_{k+1}\bar{T} factors -----------------------------------------------------------------*/
@@ -221,9 +242,27 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
 
     /* ASSIGNMENT BLOCK START ---------------------------------------------------------------------------------------*/
 
-        // Create loop relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
-        // ..
-
+    // Create loop relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
+    // tf_Bprev_Bcurr: loop pose
+    // double *PARAM_POSE_icp = new double[7];
+    // double *PARAM_POSE_p2c = new double[7];
+    // myTf tf_prev2curr = odom_i.inverse()*odom_j;
+    // PARAM_POSE_icp[0] = tf_prev2curr.pos.x();
+    // PARAM_POSE_icp[1] = tf_prev2curr.pos.y();
+    // PARAM_POSE_icp[2] = tf_prev2curr.pos.z();
+    // PARAM_POSE_icp[3] = tf_prev2curr.rot.x();
+    // PARAM_POSE_icp[4] = tf_prev2curr.rot.y();
+    // PARAM_POSE_icp[5] = tf_prev2curr.rot.z();
+    // PARAM_POSE_icp[6] = tf_prev2curr.rot.w();
+    // PARAM_POSE_p2c[0] = tf_Bprev_Bcurr.pos.x();
+    // PARAM_POSE_p2c[1] = tf_Bprev_Bcurr.pos.y();
+    // PARAM_POSE_p2c[2] = tf_Bprev_Bcurr.pos.z();
+    // PARAM_POSE_p2c[3] = tf_Bprev_Bcurr.rot.x();
+    // PARAM_POSE_p2c[4] = tf_Bprev_Bcurr.rot.y();
+    // PARAM_POSE_p2c[5] = tf_Bprev_Bcurr.rot.z();
+    // PARAM_POSE_p2c[6] = tf_Bprev_Bcurr.rot.w();
+    // RelOdomFactor *fl = new RelOdomFactor(tf_Bprev_Bcurr.pos, tf_prev2curr.pos, tf_Bprev_Bcurr.rot, tf_prev2curr.rot, 10e-2, 10e-2); // what's the n??
+    // res_ids_loop.push_back(problem.AddResidualBlock(fl, NULL)); // , PARAM_POSE_p2c, PARAM_POSE_icp
     /* ASSIGNMENT BLOCK END -----------------------------------------------------------------------------------------*/
 
     /* #endregion Add the loop prior factors ------------------------------------------------------------------------*/
@@ -262,17 +301,36 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
 
 int main(int argc, char **argv)
 {
+    
     ros::init(argc, argv, "oblam_pgo");
     ros::NodeHandle nh("~");
     nh_ptr = boost::make_shared<ros::NodeHandle>(nh);
 
-    printf(KGRN "OBLAM Pose Graph Optimization Started\n" RESET);
+    // Setup logging.
+    google::InitGoogleLogging(argv[0]);
+    google::InstallFailureSignalHandler();
+    FLAGS_colorlogtostderr = true;
+    google::SetStderrLogging(google::INFO);
 
+    LOG(INFO) << KGRN << "OBLAM Pose Graph Optimization Started" << RESET;
     /* #region Read the keyframe pose from memory -------------------------------------------------------------------*/
 
+    // through config file
+    int loop_index_diff, two_loop_index_diff, wait_time_if_no_loop, wait_time_if_loop;
+    double loop_dis;
+    string data_path;  
+    bool _debug_print; 
+
+    nh.param("/debug_print", _debug_print, false);
+    nh.param("/data_path", data_path, string("/home/kin/"));
+    nh.param("/loop_index_diff", loop_index_diff, 100);
+    nh.param("/two_loop_index_diff", two_loop_index_diff, 10);
+    nh.param("/wait_time_if_no_loop", wait_time_if_no_loop, 25);
+    nh.param("/wait_time_if_no_loop", wait_time_if_no_loop, 25);
+    nh.param("/loop_dis", loop_dis, double(7.0));
+
     // Find the recorded data
-    string data_path; nh.param("/data_path", data_path, string("/home/tmn"));
-    cout << "Data Path: " << data_path << endl;
+    LOG(INFO) << "Data Path: " << data_path;
 
     CloudPosePtr kfPose(new CloudPose());
     pcl::io::loadPCDFile<PointPose>(data_path + "KfCloudPose.pcd", *kfPose);
@@ -285,12 +343,14 @@ int main(int argc, char **argv)
     {
         ROS_ASSERT((int)(kfPose->points[i].intensity) == i);
 
-        kfCloud[i] = CloudXYZITPtr(new CloudXYZIT()); std::stringstream iss; iss << std::setw(4) << std::setfill('0') << i;
+        kfCloud[i] = CloudXYZITPtr(new CloudXYZIT());
+        std::stringstream iss;
+        iss << std::setw(4) << std::setfill('0') << i;
+
         string kf_file = data_path + "KFCloudInB/KfCloudinB_" + iss.str() + ".pcd";
-        cout << "Reading file: " << kf_file << endl;
         pcl::io::loadPCDFile<PointXYZIT>(kf_file, *kfCloud[i]);
     }
-
+    LOG(INFO) << "Finished reading all files";
     /* #endregion Read the keyframe pose from memory ----------------------------------------------------------------*/
 
     /* #region Create some common objects ---------------------------------------------------------------------------*/
@@ -316,13 +376,16 @@ int main(int argc, char **argv)
 
     /* #endregion Create some common objects ------------------------------------------------------------------------*/
 
+    // save make effect preId
+    int effect_preId = -1;
     while (ros::ok())
     {
         // Increment the keyframe index
-        static int currId = -1; currId++;
+        static int currId = -1;
+        currId++;
         if (currId == kfPose->size() - 1)
         {
-            printf("Process finished.");
+            LOG(INFO) << "Process finished.";
             exit(0);
         }
 
@@ -355,15 +418,45 @@ int main(int argc, char **argv)
 
         /* ASSIGNMENT BLOCK START -----------------------------------------------------------------------------------*/
 
-            // Step 1. Use the kdtreekf.nearestksearch() function to search for N neighbours of currpose (you decide N).
-            // Step 2: Come up with some logics to determine a loop closure keyframe candidate in this neigbourhood.
-            // Step 3: Pass the ID of the keyframe candidate to "previd" and set prevkfcandidatefound to "true" to proceed.
+        // Step 1. Use the kdTreeKF.nearestKSearch() function to search for N neighbours of currpose (you decide N).
+        
+        // reference: https://pcl.readthedocs.io/projects/tutorials/en/latest/kdtree_search.html
+        // pcl lib: http://pointclouds.org/documentation/classpcl_1_1search_1_1_kd_tree.html#a20501b588a7971de1dbe92a634deafc5
+        int K = 10;
+        std::vector<int> pointIdxNKNSearch(K);
+        std::vector<float> pointNKNSquaredDistance(K);
 
+        // KdTreeFLANN<PointPose> kdTreeKF;
+        kdTreeKF.nearestKSearch(currPose, 10, pointIdxNKNSearch, pointNKNSquaredDistance);
+
+        
+        for (std::size_t i = 0; i < pointIdxNKNSearch.size (); ++i){
+            // debug for the knn search
+            LOG_IF(INFO, _debug_print) << "curr id: " << currId << " " << pointIdxNKNSearch[i] << " (squared distance: " << pointNKNSquaredDistance[i] << ")";
+
+            // Step 2: Come up with some logics to determine a loop closure keyframe candidate in this neigbourhood.
+            int KNS_id = pointIdxNKNSearch[i]; 
+            double KNS_dis = pointNKNSquaredDistance[i];
+
+            // index diff > threshold, the min distance
+            if(abs(currId - KNS_id)>loop_index_diff && KNS_dis<loop_dis){
+                // do not add the near location twice more in the loop
+                if(effect_preId!=-1 && abs(effect_preId - KNS_id)<two_loop_index_diff)
+                    continue;
+                // Step 3: Pass the ID of the keyframe candidate to "previd" and set prevkfcandidatefound to "true" to proceed.
+                prevId = KNS_id;
+                effect_preId = KNS_id;
+                prevKfCandidateFound = true;
+                LOG(INFO) << KRED << "ATTENTION HERE!! " << RESET <<" Recording the loop closure candidate";
+                LOG(INFO) << "curr id: " << currId << " " << prevId << " (squared distance: " << KNS_dis << ")";
+            }
+        }
+        
         /* ASSIGNMENT BLOCK END -------------------------------------------------------------------------------------*/
 
         if (!prevKfCandidateFound)
         {
-            this_thread::sleep_for(chrono::milliseconds(25)); // You can reduce 25 ms to shorter wait
+            this_thread::sleep_for(chrono::milliseconds(wait_time_if_no_loop)); // You can reduce 25 ms to shorter wait
             continue;
         }
 
@@ -458,13 +551,13 @@ int main(int argc, char **argv)
         Util::publishCloud(kfAllPub, *kfPose, ros::Time::now(), "world");
 
         // Visualize the loop
-        if (icp_passed)
+        if (icp_passed){
             publishLoop(kfPose->points[currId], kfPose->points[prevId]);
-
-        // Write down the keyframe pose
-        PCDWriter writer; writer.writeASCII(data_path + "/KfCloudPoseOptimized.pcd", *kfPose, 18);
-
-        this_thread::sleep_for(chrono::milliseconds(25));
+            // Write down the keyframe pose
+            PCDWriter writer; writer.writeASCII(data_path + "/KfCloudPoseOptimized.pcd", *kfPose, 18);
+            LOG(INFO) << "Saving the Optimizaed pose now... check here: " << data_path + "/KfCloudPoseOptimized.pcd";
+            this_thread::sleep_for(chrono::milliseconds(wait_time_if_loop));
+        }
     }
 
     return 0;
