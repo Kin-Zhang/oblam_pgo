@@ -251,8 +251,8 @@ struct myTf
 
     friend std::ostream &operator<<(std::ostream &os, const myTf &tf)
     {
-        os << tf.pos.x() << " " << tf.pos.y() << " " << tf.pos.z() << " " << tf.rot.w() << " "
-           << tf.rot.x() << " " << tf.rot.y() << " " << tf.rot.z();
+        os << "\n[ x: " << tf.pos.x() << ", y: " << tf.pos.y() << ", z: " << tf.pos.z() << ".\n rot w: " << tf.rot.w() << ", x: "
+           << tf.rot.x() << ", y: " << tf.rot.y() << ", z: " << tf.rot.z() << "]";
         return os;
     }
 }; // class myTf

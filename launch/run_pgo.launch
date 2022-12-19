@@ -7,6 +7,6 @@
     <node pkg="oblam_pgo" type="oblam_pgo_node" name="oblam_pgo" required="false" output="screen"/>
 
     <!-- Launch rviz -->
-    <!-- <node pkg="rviz" type="rviz" name="rviz" required="true" output="screen" args="-d $(find oblam_pgo)/launch/pgo.rviz"/>     -->
+    <node pkg="rviz" type="rviz" name="rviz" required="true" output="screen" args="-d $(find oblam_pgo)/launch/pgo.rviz"/>    
 
 </launch>

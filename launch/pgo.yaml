@@ -1,10 +1,15 @@
 # remember change this one
 data_path: /home/kin/bags/ntu_viral/A3/mcd_ntu_daytime_04/
 debug_print: false
-wait_time_if_no_loop: 5 #ms
-wait_time_if_loop: 20000 #ms
+# only for visualization
+wait_time_if_no_loop: 1 #ms
+wait_time_if_loop: 25 #ms
+
 # loop closer param ====> 
+open_loop closure: true
 # how many index gap between the loop one (approximate is enough)
 loop_index_diff: 100
 loop_dis: 6 # meter
-two_loop_index_diff: 200
+two_loop_index_diff: 5
+position_noise: 100
+connectn_noise: 1000 # position_noise*10?

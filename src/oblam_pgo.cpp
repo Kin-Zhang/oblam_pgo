@@ -53,6 +53,7 @@
 #include <pcl/filters/impl/voxel_grid.hpp>
 #include <pcl/filters/crop_box.h>
 #include <pcl/filters/impl/crop_box.hpp>
+#include <pcl/common/io.h>
 /* All needed for pointcloud manipulation -------------*/
 
 #include "std_msgs/Header.h"
@@ -75,7 +76,8 @@ using namespace Eigen;
 using namespace pcl;
 
 ros::NodeHandlePtr nh_ptr;
-
+CloudPose kfPose_prev_res;
+double p_n, c_n;
 // Visualizing the current pose
 void publishPose(PointPose &currPose)
 {
@@ -171,7 +173,7 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
 {
     // Number of keyframe poses = number of params to optimize
     int KF_NUM = kfPose->size();
-
+    LOG(INFO) << " number of params (KF_NUM): "<< KF_NUM;
     /* #region Create the ceres problem and settings ----------------------------------------------------------------*/
     ceres::Problem problem;
     ceres::Solver::Options options;
@@ -208,30 +210,26 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
     vector<ceres::internal::ResidualBlock *> res_ids_relpose;
     double cost_relpose_init = -1, cost_relpose_final = -1;
 
+    ceres::LossFunction *loss_function;
+    loss_function = NULL;
+    // loss_function = new ceres::HuberLoss(1.0);
     /* ASSIGNMENT BLOCK START ---------------------------------------------------------------------------------------*/
-    // double *PARAM_POSE_icp_wb = new double[7];
-    // double *PARAM_POSE_est_wb = new double[7];
-    // myTf odom_i(kfPose->points[prevId]);
-    // myTf odom_j(kfPose->points[currId]);
-    // myTf tfm_W_Bcurr = odom_i * tf_Bprev_Bcurr;
-    // PARAM_POSE_icp_wb[0] = tfm_W_Bcurr.pos.x();
-    // PARAM_POSE_icp_wb[1] = tfm_W_Bcurr.pos.y();
-    // PARAM_POSE_icp_wb[2] = tfm_W_Bcurr.pos.z();
-    // PARAM_POSE_icp_wb[3] = tfm_W_Bcurr.rot.x();
-    // PARAM_POSE_icp_wb[4] = tfm_W_Bcurr.rot.y();
-    // PARAM_POSE_icp_wb[5] = tfm_W_Bcurr.rot.z();
-    // PARAM_POSE_icp_wb[6] = tfm_W_Bcurr.rot.w();
-    // PARAM_POSE_est_wb[0] = odom_j.pos.x();
-    // PARAM_POSE_est_wb[1] = odom_j.pos.y();
-    // PARAM_POSE_est_wb[2] = odom_j.pos.z();
-    // PARAM_POSE_est_wb[3] = odom_j.rot.x();
-    // PARAM_POSE_est_wb[4] = odom_j.rot.y();
-    // PARAM_POSE_est_wb[5] = odom_j.rot.z();
-    // PARAM_POSE_est_wb[6] = odom_j.rot.w();
-    // // myTf tf_Bprev_Bcurr = myTf(prevPose).inverse() * myTf(tfm_W_Bcurr);
-    // // Create prior relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
-    // RelOdomFactor *f = new RelOdomFactor(tfm_W_Bcurr.pos, odom_j.pos, tfm_W_Bcurr.rot, odom_j.rot, 10e-2, 10e-2); // what's the n?? -> noise but where to find the noise?
-    // res_ids_relpose.push_back(problem.AddResidualBlock(f, NULL, PARAM_POSE_icp_wb, PARAM_POSE_est_wb));
+    // Create prior relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
+    if(kfPose_prev_res.size()==0){
+        copyPointCloud(*kfPose, kfPose_prev_res);
+    }
+    else{
+        for (int i = 0; i < KF_NUM-1; i++){
+            myTf initial_i(kfPose_prev_res.points[i]);
+            myTf initial_j(kfPose_prev_res.points[i+1]); // should not be zero??
+            RelOdomFactor *f = new RelOdomFactor(initial_i.pos, initial_j.pos, initial_i.rot, initial_j.rot, c_n, c_n); 
+            // question A: what's the n?? -> noise, but where to find the noise? -> or how to define the noise?
+            res_ids_relpose.push_back(problem.AddResidualBlock(f, loss_function, PARAM_POSE[i], PARAM_POSE[i+1]));
+        }
+        copyPointCloud(*kfPose, kfPose_prev_res);
+    }
+
+    // question B: There seems no {}^k_{k+1}\bar{T}, should we calculate the ICP through all these again? seems not clever way.
     /* ASSIGNMENT BLOCK END -----------------------------------------------------------------------------------------*/
 
     /* #endregion Add the {}^k_{k+1}\bar{T} factors -----------------------------------------------------------------*/
@@ -241,28 +239,11 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
     double cost_loop_init = -1, cost_loop_final = -1;
 
     /* ASSIGNMENT BLOCK START ---------------------------------------------------------------------------------------*/
-
+    myTf tfm_W_Bcurr = myTf(kfPose->points[prevId]) * tf_Bprev_Bcurr;
+    myTf tfm_W_Bprev = myTf(kfPose->points[currId]) * tf_Bprev_Bcurr.inverse();
     // Create loop relative pose factors and the residual block to ceres. Use the RelOdomFactor() class
-    // tf_Bprev_Bcurr: loop pose
-    // double *PARAM_POSE_icp = new double[7];
-    // double *PARAM_POSE_p2c = new double[7];
-    // myTf tf_prev2curr = odom_i.inverse()*odom_j;
-    // PARAM_POSE_icp[0] = tf_prev2curr.pos.x();
-    // PARAM_POSE_icp[1] = tf_prev2curr.pos.y();
-    // PARAM_POSE_icp[2] = tf_prev2curr.pos.z();
-    // PARAM_POSE_icp[3] = tf_prev2curr.rot.x();
-    // PARAM_POSE_icp[4] = tf_prev2curr.rot.y();
-    // PARAM_POSE_icp[5] = tf_prev2curr.rot.z();
-    // PARAM_POSE_icp[6] = tf_prev2curr.rot.w();
-    // PARAM_POSE_p2c[0] = tf_Bprev_Bcurr.pos.x();
-    // PARAM_POSE_p2c[1] = tf_Bprev_Bcurr.pos.y();
-    // PARAM_POSE_p2c[2] = tf_Bprev_Bcurr.pos.z();
-    // PARAM_POSE_p2c[3] = tf_Bprev_Bcurr.rot.x();
-    // PARAM_POSE_p2c[4] = tf_Bprev_Bcurr.rot.y();
-    // PARAM_POSE_p2c[5] = tf_Bprev_Bcurr.rot.z();
-    // PARAM_POSE_p2c[6] = tf_Bprev_Bcurr.rot.w();
-    // RelOdomFactor *fl = new RelOdomFactor(tf_Bprev_Bcurr.pos, tf_prev2curr.pos, tf_Bprev_Bcurr.rot, tf_prev2curr.rot, 10e-2, 10e-2); // what's the n??
-    // res_ids_loop.push_back(problem.AddResidualBlock(fl, NULL)); // , PARAM_POSE_p2c, PARAM_POSE_icp
+    RelOdomFactor *fl = new RelOdomFactor(tfm_W_Bprev.pos, tfm_W_Bcurr.pos, tfm_W_Bprev.rot, tfm_W_Bcurr.rot, p_n, p_n); // what's the n??
+    res_ids_loop.push_back(problem.AddResidualBlock(fl, loss_function, PARAM_POSE[prevId], PARAM_POSE[currId]));
     /* ASSIGNMENT BLOCK END -----------------------------------------------------------------------------------------*/
 
     /* #endregion Add the loop prior factors ------------------------------------------------------------------------*/
@@ -281,7 +262,7 @@ void OptimizePoseGraph(CloudPosePtr &kfPose, int prevId, int currId, myTf<double
     /* #endregion Compute the final cost ----------------------------------------------------------------------------*/
 
     // Print out a report of the optimization problem
-    printf("PGO. J: %9.3f -> %9.3f. Jrp: %9.3f -> %9.3f. Jlp: %9.3f -> %9.3f\n",
+    printf("PGO. J: %9.3f -> %9.9f. Jrp: %9.3f -> %9.9f. Jlp: %9.3f -> %9.9f\n",
            summary.initial_cost, summary.final_cost, cost_relpose_init, cost_relpose_final, cost_loop_init, cost_loop_final);
 
     /* #region Load the param value back to keyframe ----------------------------------------------------------------*/
@@ -328,6 +309,8 @@ int main(int argc, char **argv)
     nh.param("/wait_time_if_no_loop", wait_time_if_no_loop, 25);
     nh.param("/wait_time_if_no_loop", wait_time_if_no_loop, 25);
     nh.param("/loop_dis", loop_dis, double(7.0));
+    nh.param("/position_noise", p_n, double(0.01));
+    nh.param("/connectn_noise", c_n, double(0.01));
 
     // Find the recorded data
     LOG(INFO) << "Data Path: " << data_path;
@@ -432,7 +415,7 @@ int main(int argc, char **argv)
         
         for (std::size_t i = 0; i < pointIdxNKNSearch.size (); ++i){
             // debug for the knn search
-            LOG_IF(INFO, _debug_print) << "curr id: " << currId << " " << pointIdxNKNSearch[i] << " (squared distance: " << pointNKNSquaredDistance[i] << ")";
+            LOG_IF(INFO, _debug_print) << "curr id: " << currId << ". KNSearch id: " << pointIdxNKNSearch[i] << " (squared distance: " << pointNKNSquaredDistance[i] << ")";
 
             // Step 2: Come up with some logics to determine a loop closure keyframe candidate in this neigbourhood.
             int KNS_id = pointIdxNKNSearch[i]; 
@@ -448,7 +431,7 @@ int main(int argc, char **argv)
                 effect_preId = KNS_id;
                 prevKfCandidateFound = true;
                 LOG(INFO) << KRED << "ATTENTION HERE!! " << RESET <<" Recording the loop closure candidate";
-                LOG(INFO) << "curr id: " << currId << " " << prevId << " (squared distance: " << KNS_dis << ")";
+                LOG(INFO) << "curr id: " << currId << ". KNSearch id: " << prevId << " (squared distance: " << KNS_dis << ")";
             }
         }
         
@@ -537,14 +520,19 @@ int main(int argc, char **argv)
         if (icp_passed)
         {
             // Icp passes, run PGO
-            cout << "tf_W_Bcurr" << endl
-                 << tfm_W_Bcurr << endl;
-
+            // cout << "tf_W_Bcurr" << endl
+            //      << tfm_W_Bcurr << endl;
+            publishLoop(kfPose->points[currId], kfPose->points[prevId]);
             // Loop closure prior {}^Bprev_Bcurr\bar{T}
             myTf tf_Bprev_Bcurr = myTf(prevPose).inverse() * myTf(tfm_W_Bcurr);
 
+            LOG(INFO) << "Current points pose:";
+            LOG(INFO) << "Before optimization: " << myTf(kfPose->points[currId]);
             // Optimize the pose graph
             OptimizePoseGraph(kfPose, prevId, currId, tf_Bprev_Bcurr);
+
+            // after optimize : W_Bcurr
+            LOG(INFO) << "After  optimization: " << myTf(kfPose->points[currId]);
         }
 
         // Publish all of the keyframe pose
@@ -552,7 +540,7 @@ int main(int argc, char **argv)
 
         // Visualize the loop
         if (icp_passed){
-            publishLoop(kfPose->points[currId], kfPose->points[prevId]);
+            // publishLoop(kfPose->points[currId], kfPose->points[prevId]);
             // Write down the keyframe pose
             PCDWriter writer; writer.writeASCII(data_path + "/KfCloudPoseOptimized.pcd", *kfPose, 18);
             LOG(INFO) << "Saving the Optimizaed pose now... check here: " << data_path + "/KfCloudPoseOptimized.pcd";
