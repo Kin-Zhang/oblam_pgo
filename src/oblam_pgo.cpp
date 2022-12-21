@@ -568,7 +568,6 @@ int main(int argc, char **argv)
 
         // Visualize the loop
         if (icp_passed){
-            // publishLoop(kfPose->points[currId], kfPose->points[prevId]);
             // Write down the keyframe pose
             PCDWriter writer; writer.writeASCII(data_path + "/KfCloudPoseOptimized.pcd", *kfPose, 18);
             LOG(INFO) << "Saving the Optimizaed pose now... check here: " << data_path + "/KfCloudPoseOptimized.pcd";

@@ -55,13 +55,28 @@ roslaunch oblam_pgo run_pgo.launch
 ## Demo
 
 Go to the function OptimmizePoseGraph() and create a ceres problem and solve it. If it works you should see a loop closure event like this.
+<details>
+  <summary>Demo effects here</summary>
 
 <p align="center">
     <img src="docs/loop2.gif" alt="mcd ntu daytime 04" width="49%"/>
     <img src="docs/loop1.gif" alt="mcd ntu daytime 01" width="49%"/>
 </p>
+</details>
 
 ## Kin's results
 
+Video Here:
 
+https://user-images.githubusercontent.com/35365764/209021486-09aa2344-0708-4711-962c-40ee63e7f73b.mp4
 
+The ATE for ablation study:
+
+| Config                             | ATE    |
+| ---------------------------------- | ------ |
+| No loop closure                    | 1.8518 |
+| loop closure only on prior         | 1.8518 |
+| loop closure only on relative pose | 1.8573 |
+| loop closure on both of them       | 0.7235 |
+
+![image](https://user-images.githubusercontent.com/35365764/209019932-27f9facb-2363-4bb0-bdc2-3bb38ddd1ffd.png)

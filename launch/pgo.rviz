@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /Curr1
         - /Curr1/UpToCurrKeyframe1
         - /Curr1/currKfNbr1
         - /Prev1/prevKfNbr1
@@ -67,7 +66,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 5
-      Enabled: false
+      Enabled: true
       Invert Rainbow: false
       Max Color: 252; 233; 79
       Min Color: 0; 0; 0
@@ -82,7 +81,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Class: rviz/Group
       Displays:
         - Alpha: 1
@@ -210,7 +209,7 @@ Visualization Manager:
       Name: Curr
     - Class: rviz/Group
       Displays:
-        - Alpha: 1
+        - Alpha: 0.6000000238418579
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 10
@@ -221,7 +220,7 @@ Visualization Manager:
           Class: rviz/PointCloud2
           Color: 78; 154; 6
           Color Transformer: FlatColor
-          Decay Time: 1
+          Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
@@ -238,7 +237,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 1
+        - Alpha: 0.5
           Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
             Max Value: 10
@@ -249,7 +248,7 @@ Visualization Manager:
           Class: rviz/PointCloud2
           Color: 255; 255; 255
           Color Transformer: Intensity
-          Decay Time: 10000
+          Decay Time: 0
           Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
@@ -268,7 +267,7 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-      Enabled: false
+      Enabled: true
       Name: Prev
     - Class: rviz/Marker
       Enabled: true
@@ -306,7 +305,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 25.348716735839844
+      Distance: 49.13731002807617
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -314,17 +313,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 1.5793514251708984
-        Y: 6.6349077224731445
-        Z: -2.0000622272491455
+        X: -2.8863344192504883
+        Y: -1.2744574546813965
+        Z: -2.0000650882720947
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4003978669643402
+      Pitch: 0.7003974318504333
       Target Frame: body
-      Yaw: 0.3535591661930084
+      Yaw: 0.6517250537872314
     Saved: ~
 Window Geometry:
   Displays:
