@@ -60,4 +60,8 @@ Go to the function OptimmizePoseGraph() and create a ceres problem and solve it.
     <img src="docs/loop2.gif" alt="mcd ntu daytime 04" width="49%"/>
     <img src="docs/loop1.gif" alt="mcd ntu daytime 01" width="49%"/>
 </p>
+
 ## Kin's results
+
+
+

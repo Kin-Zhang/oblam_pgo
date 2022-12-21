@@ -6,10 +6,14 @@ wait_time_if_no_loop: 1 #ms
 wait_time_if_loop: 25 #ms
 
 # loop closer param ====> 
-open_loop closure: true
+open_loop_closure_rel: true
+open_loop_closure_pri: true
+
 # how many index gap between the loop one (approximate is enough)
 loop_index_diff: 100
-loop_dis: 6 # meter
-two_loop_index_diff: 5
-position_noise: 100
-connectn_noise: 1000 # position_noise*10?
+two_loop_index_diff: 1
+loop_dis: 10 # meter, the distance you can consider to do ICP etc
+
+# the proportion one matters, the value is not real part
+position_noise: 0.05
+connectn_noise: 0.01
