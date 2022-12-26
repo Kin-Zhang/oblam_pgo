@@ -15,7 +15,7 @@ Printer logger (glog, gflag are also dependencies on Ceres)
 
 ```bash
 # maybe need sudo if you are running it in your desktop
-curl -sL https://raw.githubusercontent.com/Kin-Zhang/Kin-Zhang/main/Dockerfiles/setup_lib.sh | bash
+curl -sL https://raw.githubusercontent.com/Kin-Zhang/Kin-Zhang/main/Dockerfiles/installGlog_ownenv.sh | bash
 ```
 
 Solver: [Ceres 2.1.0](http://ceres-solver.org/installation.html) (do checkout the branch 2.1.0 after git clone)
@@ -28,8 +28,6 @@ mkdir build && cd build
 cmake .. && make -j$(nproc)
 sudo make install
 ```
-
-The code was edited on VS Code with [#region folding add-on](https://marketplace.visualstudio.com/items?itemName=maptz.regionfolder) for tidier view.
 
 ## Build
 Please install all dependencies first. Afterwards, create a ros workspace, clone the package to the workspace, and build by `catkin build` or `catkin_make`, for e.g.:
