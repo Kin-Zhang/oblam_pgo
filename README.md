@@ -22,7 +22,7 @@ Solver: [Ceres 2.1.0](http://ceres-solver.org/installation.html) (do checkout th
 
 ```bash
 git clone https://ceres-solver.googlesource.com/ceres-solver
-git fetch --all --tags
+cd ceres-solver && git fetch --all --tags
 git checkout tags/2.1.0
 mkdir build && cd build
 cmake .. && make -j$(nproc)
@@ -33,7 +33,7 @@ sudo make install
 Please install all dependencies first. Afterwards, create a ros workspace, clone the package to the workspace, and build by `catkin build` or `catkin_make`, for e.g.:
 
 ```
-mkdir oblam/src
+mkdir -p oblam/src
 cd oblam/src
 git clone https://github.com/brytsknguyen/oblam_pgo
 cd ../..; catkin build
